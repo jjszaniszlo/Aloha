@@ -1,0 +1,18 @@
+# discord api info
+[discord]
+webhook = ""
+public_token = ""
+channel_id = ""
+
+# chat config
+[chat]
+global_format = "[<server>] <<player>> <message>"
+discord_format = "[<bold><color:#7785CC>D<reset>] <<player>> <message>"
+
+# server name aliasing for chat tag
+[servers.aliases]
+example = "E"
+
+# server name coloring for chat tag
+[servers.colors]
+example = "#FFFFFF"
