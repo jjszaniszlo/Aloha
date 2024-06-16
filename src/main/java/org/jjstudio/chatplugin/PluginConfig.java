@@ -2,7 +2,6 @@ package org.jjstudio.chatplugin;
 
 import com.moandjiezana.toml.Toml;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
-import org.checkerframework.checker.units.qual.N;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
