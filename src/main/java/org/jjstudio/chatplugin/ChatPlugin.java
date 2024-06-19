@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Plugin(
         id = "alohachatplugin",
@@ -31,6 +33,9 @@ public class ChatPlugin {
     private static ProxyServer proxyServer;
     private static Path dataDirectory;
     private static Logger logger;
+
+    private static Map<String, Integer> serverCapacities;
+    private static Map<String, RegisteredServer> servers;
 
     @Inject
     public ChatPlugin(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger) {
@@ -63,7 +68,7 @@ public class ChatPlugin {
         DiscordBot.relayChatMessage(String.format("[%s] %s", serverName.toUpperCase(), event.getPlayer().getUsername()), event.getMessage());
 
         final var msg = parseMessage(config.globalChatFormat(), List.of(
-                new ChatTag("server", "", true),
+                new ChatTag("server", serverAlias, true),
                 new ChatTag("player", event.getPlayer().getUsername(), false),
                 new ChatTag("message", event.getMessage(), false)
         ));
@@ -74,6 +79,18 @@ public class ChatPlugin {
 
     private static void init() {
         config = PluginConfig.loadConfig(dataDirectory);
+
+        servers = new HashMap<>();
+        serverCapacities = new HashMap<>();
+        for (RegisteredServer s : proxyServer.getAllServers()) {
+            servers.put(s.getServerInfo().getName(), s);
+            s.ping().thenAccept(ping -> {
+                ping.getPlayers().ifPresent(players -> {
+                    serverCapacities.put(s.getServerInfo().getName(), players.getMax());
+                });
+            });
+        }
+
 
         DiscordBot.init(logger);
     }
@@ -97,11 +114,20 @@ public class ChatPlugin {
     }
 
     public static void sendMessageExceptServer(Component msg, RegisteredServer srv) {
-        for (RegisteredServer s : proxyServer.getAllServers()) {
+        for (RegisteredServer s : servers.values()) {
             if (srv != s) {
                 s.sendMessage(msg);
             }
         }
+    }
+
+    public static Map<String, String> getAllServersPlayerCount() {
+        Map<String, String> playerCounts = new HashMap<>();
+        for (RegisteredServer s : servers.values()) {
+            int currentServerPlayerCount = s.getPlayersConnected().size();
+            playerCounts.put(s.getServerInfo().getName(), String.format("%d/%d", currentServerPlayerCount, serverCapacities.get(s.getServerInfo().getName())));
+        }
+        return playerCounts;
     }
 
     public record ChatTag(@NonNull String name, @NonNull String value, boolean parseValue) {}

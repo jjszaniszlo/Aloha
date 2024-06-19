@@ -5,6 +5,9 @@ import org.javacord.api.DiscordApiBuilder;
 import org.javacord.api.entity.channel.TextChannel;
 import org.javacord.api.entity.intent.Intent;
 import org.javacord.api.entity.message.WebhookMessageBuilder;
+import org.javacord.api.entity.message.embed.EmbedBuilder;
+import org.javacord.api.interaction.SlashCommand;
+import org.javacord.api.interaction.SlashCommandInteraction;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -40,6 +43,25 @@ public class DiscordBot {
                 .ifPresentOrElse(
                     e -> channel = e,
                     () -> logger.info(String.format("Could not find channel with id: %s!", ChatPlugin.getConfig().discordChannelID())));
+
+        SlashCommand statusCommand = SlashCommand.with("status", "Query the status of both the Creative and Survival MC Server")
+                .setDefaultEnabledForEveryone()
+                .createGlobal(discordApi)
+                .join();
+
+        discordApi.addSlashCommandCreateListener(event -> {
+            final var interaction = event.getSlashCommandInteraction();
+            if (interaction.getFullCommandName().equals("status")) {
+                final var messageBuilder = interaction.createImmediateResponder();
+                final var embed = new EmbedBuilder()
+                        .setAuthor("ServerStatus");
+
+                final var playerCounts = ChatPlugin.getAllServersPlayerCount();
+                playerCounts.forEach((key, value) -> embed.addField(String.format("Server: %s", key), String.format("Players Connected: %s", value)));
+
+                messageBuilder.addEmbed(embed).respond();
+            }
+        });
     }
 
     public static void relayChatMessage(String username, String message) {
